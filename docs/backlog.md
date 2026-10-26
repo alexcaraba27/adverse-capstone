@@ -1,126 +1,130 @@
 # Adverse — Product Backlog
 
-**Product:** Adverse is an independent third-party record of what an AI screening tool did when it evaluated a job applicant — a "dashcam" for AI hiring decisions.
+**Product:** Adverse is a dashcam for AI hiring. When a company's outside AI screening tool evaluates a job applicant, Adverse freezes an independent record of what the AI saw, what it decided, when, which model version and settings produced the decision, and who configured those settings.
 
-**Primary users:**
-- In-house employment lawyers at companies that use outside AI screening vendors.
-- Rejected candidates who want proof of what happened that doesn't depend on the vendor or the employer.
+**Primary user:** The company's in-house employment lawyer, who has to sign off on vendor AI they can't see into.
+**Secondary user:** The rejected candidate.
 
-> **Note on confidence:** No user interviews have been conducted yet. Items marked **[GUESS]** are unverified assumptions about user needs, regulatory requirements, or workflows that need validation before building.
+**Hard product constraint:** No AI ever creates or changes a record. Records are written by deterministic capture at decision time and modified by no one afterward.
+
+> **Confidence note:** No in-house employment lawyers have been interviewed yet. Items marked **[GUESS]** are unverified assumptions about workflows, authentication, regulatory expectations, or latency/SLA needs that must be validated before building.
 
 ---
 
 ## MVP Slice
 
-The MVP is the set of **Must** stories below (Stories 1, 2, and 7). Together they deliver the minimum promise of the product: an independent, retrievable, defensible record of a single AI screening decision, accessible to both sides.
+The MVP is the set of **Must** stories below (Stories 1, 2, and 3). Together they deliver the minimum promise of the product: a lawyer can open a single frozen decision record, trust it hasn't been altered, and the candidate it describes can get their own copy.
 
 ---
 
 ## User Stories
 
-### Story 1 — Retrieve a tamper-evident decision log
+### Story 1 — Lawyer opens a single decision record
 **As an** in-house employment lawyer,
-**I want** to pull a tamper-evident log of what the AI screening tool did for a specific applicant,
-**so that** I can defend a hiring decision without having to trust the vendor's own records.
+**I want** to open the full record of a single AI screening decision for one applicant,
+**so that** I can see exactly what the vendor's AI did without having to ask the vendor.
 
 **Acceptance criteria:**
-- Log includes timestamp, vendor model identifier/version, inputs the model received, and the output score or recommendation.
-- Log is cryptographically signed at capture time and independently verifiable without contacting the vendor.
-- Retrievable by applicant identifier in under 10 seconds. **[GUESS — latency target not validated]**
+- Record displays the inputs the AI received, the decision/output it produced, the exact timestamp, the model version and settings in effect, and the identity of the person who configured those settings.
+- Record is retrievable by candidate identifier or decision identifier in under 10 seconds. **[GUESS — latency target not validated with lawyers]**
+- The record is read-only in the UI, and every access is itself logged.
 
 **Priority:** Must *(MVP)*
 
 ---
 
-### Story 2 — Candidate requests their own evaluation record
-**As a** rejected candidate,
-**I want** to request a copy of how the AI evaluated my application,
-**so that** I have proof of what happened that doesn't depend on the employer or vendor.
+### Story 2 — Frozen, tamper-evident capture
+**As an** in-house employment lawyer,
+**I want** each decision record to be frozen at the moment of capture and verifiably unaltered,
+**so that** I can rely on it as evidence even if the vendor or an internal team later tries to revise history.
 
 **Acceptance criteria:**
-- Candidate can authenticate using information they provided on the original application (e.g., email + application reference). **[GUESS — auth model not validated with candidates or counsel]**
-- Request is fulfilled within 7 days. **[GUESS — assumed from analogy to FCRA/GDPR SAR timelines; actual requirement unconfirmed]**
-- Delivered report describes, in plain language, what the AI considered and what it output.
+- Each record is cryptographically signed at capture time; signature is verifiable without contacting the vendor.
+- Any attempt to modify a record is rejected and the attempt itself is logged.
+- No AI system or model is permitted to write, edit, or regenerate a record — enforced in code, not by policy. **[GUESS — assumes lawyers care about this guarantee being technical rather than contractual]**
 
 **Priority:** Must *(MVP)*
 
 ---
 
-### Story 7 — Produce a complete audit trail for a regulator
-**As an** in-house employment lawyer,
-**I want** to export the full audit trail of AI touchpoints for a specific candidate,
-**so that** I can respond to an EEOC inquiry, NYC Local Law 144 audit, or similar regulatory request.
+### Story 3 — Candidate requests their own decision record
+**As a** rejected candidate,
+**I want** to request the record of how the AI evaluated me,
+**so that** I have independent proof of what happened without needing cooperation from the employer or the vendor.
 
 **Acceptance criteria:**
-- Export includes every AI interaction tied to that candidate (screening, re-scoring, ranking changes).
-- Chain-of-custody metadata is preserved and visible in the export.
-- Output format is acceptable for regulatory submission. **[GUESS — no confirmed format standard; needs validation with employment counsel]**
+- Candidate can authenticate using information from their original application (e.g., email + application reference). **[GUESS — auth model unvalidated; verifying candidates without employer cooperation is an open design question]**
+- Delivered record is readable by a non-lawyer and clearly identifies the model version, timestamp, and inputs considered.
+- Request is fulfilled within 7 days. **[GUESS — assumed by analogy to FCRA/GDPR SAR timelines; no confirmed legal requirement]**
 
 **Priority:** Must *(MVP)*
 
 ---
 
-### Story 3 — Disparate-impact monitoring across protected classes
+### Story 4 — Export a decision record for outside counsel or a regulator
 **As an** in-house employment lawyer,
-**I want** to see outcome rates of the AI screener broken down by protected class,
-**so that** I can spot disparate impact risk before it becomes litigation.
+**I want** to export a single decision record as a self-contained file,
+**so that** I can hand it to outside counsel or a regulator and they can verify it independently.
 
 **Acceptance criteria:**
-- Dashboard shows selection/rejection rates by self-reported demographic categories.
-- Four-fifths rule threshold crossings are visibly flagged.
-- Report is exportable as PDF for internal legal review. **[GUESS — export format preference unvalidated]**
+- Export bundles the record, its signature, and the verification material needed to check it offline.
+- Export is produced in both a human-readable format (PDF) and a machine-readable format (JSON). **[GUESS — format preference not confirmed with employment counsel]**
+- Chain-of-custody metadata (who exported it, when) is embedded in the export.
 
 **Priority:** Should
 
 ---
 
-### Story 4 — Explain the decision to the candidate
-**As a** rejected candidate,
-**I want** to see which factors most influenced the AI's negative decision about me,
-**so that** I can decide whether to appeal, request correction, or file a complaint.
-
-**Acceptance criteria:**
-- Report names the top factors that pushed the score down, in plain English (not model internals or feature IDs).
-- Explanation distinguishes between factors the candidate provided vs. inferred factors. **[GUESS — assumes candidates care about this distinction; needs interview]**
-
-**Priority:** Should
-
----
-
-### Story 8 — Candidate downloads a portable dossier
-**As a** rejected candidate,
-**I want** to download my full Adverse dossier in a portable format,
-**so that** I can share it with an attorney or an advocacy organization.
-
-**Acceptance criteria:**
-- Export available in both human-readable PDF and machine-readable JSON.
-- Export includes the Adverse verification signature so a third party can confirm authenticity.
-
-**Priority:** Should
-
----
-
-### Story 5 — Alert when the vendor's model changes
+### Story 5 — See the configuration-change history for a vendor model
 **As an** in-house employment lawyer,
-**I want** to be alerted when the screening vendor pushes a new model version,
-**so that** I can reassess legal risk if behavior shifts.
+**I want** to see a timeline of changes to the vendor model's settings and who made each change,
+**so that** when I sign off on continued use of the vendor, I know what has shifted since the last review.
 
 **Acceptance criteria:**
-- Alert fires within 24 hours of a detected version change. **[GUESS — latency target not validated]**
-- Alert includes a summary of behavior drift on a stored canary set of past applicants.
+- Timeline shows every settings change with timestamp and the identity of the configurer.
+- Each entry links to the decision records produced under that configuration.
+- A diff view shows what changed between two configurations. **[GUESS — assumes lawyers want diffs rather than full-config snapshots]**
+
+**Priority:** Should
+
+---
+
+### Story 6 — Search and filter decision records
+**As an** in-house employment lawyer,
+**I want** to filter decision records by model version, date range, and outcome,
+**so that** I can scope a review to a specific vendor change or incident window.
+
+**Acceptance criteria:**
+- Filters can be combined (e.g., model v2.3 AND rejected AND Q2 2026).
+- Result set shows counts and is exportable as a list of record identifiers.
+- Each result links to the full Story 1 record view.
+
+**Priority:** Should
+
+---
+
+### Story 7 — Alert on vendor model or settings change
+**As an** in-house employment lawyer,
+**I want** to be notified when the vendor pushes a new model version or changes model settings,
+**so that** I can decide whether my prior sign-off still holds.
+
+**Acceptance criteria:**
+- Alert fires within 24 hours of a detected change. **[GUESS — SLA not validated]**
+- Alert names what changed and who made the change.
+- Alert links directly to the configuration-change timeline (Story 5).
 
 **Priority:** Could
 
 ---
 
-### Story 6 — Candidate files a correction/dispute
+### Story 8 — Candidate attaches a dispute to their record
 **As a** rejected candidate,
-**I want** to attach a formal correction or dispute to my decision record,
-**so that** there is a documented challenge on file if the AI used wrong information about me.
+**I want** to attach a written dispute to the record of my decision,
+**so that** my objection is formally on file alongside the AI's decision.
 
 **Acceptance criteria:**
-- Dispute is permanently attached to the original signed decision log without altering it.
-- The employer is notified of the dispute within 48 hours. **[GUESS — SLA and whether employers want this notification at all is unvalidated]**
+- Dispute is appended as a separate signed artifact; the original record is not modified.
+- The in-house lawyer is notified that a dispute has been attached. **[GUESS — unclear whether lawyers want this notification or would prefer it suppressed]**
 
 **Priority:** Could
 
@@ -130,11 +134,11 @@ The MVP is the set of **Must** stories below (Stories 1, 2, and 7). Together the
 
 | # | Story | Priority | MVP |
 |---|---|---|---|
-| 1 | Lawyer retrieves tamper-evident decision log | Must | ✓ |
-| 2 | Candidate requests own evaluation record | Must | ✓ |
-| 7 | Lawyer produces regulator-ready audit trail | Must | ✓ |
-| 3 | Disparate-impact monitoring dashboard | Should | |
-| 4 | Candidate-facing decision explanation | Should | |
-| 8 | Candidate downloads portable dossier | Should | |
-| 5 | Alert on vendor model change | Could | |
-| 6 | Candidate files correction/dispute | Could | |
+| 1 | Lawyer opens a single decision record | Must | ✓ |
+| 2 | Frozen, tamper-evident capture | Must | ✓ |
+| 3 | Candidate requests their own decision record | Must | ✓ |
+| 4 | Export a record for outside counsel / regulator | Should | |
+| 5 | Configuration-change history for a vendor model | Should | |
+| 6 | Search and filter decision records | Should | |
+| 7 | Alert on vendor model or settings change | Could | |
+| 8 | Candidate attaches a dispute to their record | Could | |
